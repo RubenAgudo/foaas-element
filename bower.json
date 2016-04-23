@@ -1,0 +1,26 @@
+{
+  "name": "foass-element",
+  "authors": [
+    "Ruben Agudo Santos <ruben.agudo@cern.ch>"
+  ],
+  "description": "Little web component that tells fuck-off randomly",
+  "main": "foass-element.html",
+  "keywords": [
+    "foass",
+    "polymer"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/RubenAgudo/foass-element",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "^1.4.0",
+    "iron-ajax": "^1.2.0",
+    "bootstrap": "^3.3.6"
+  }
+}

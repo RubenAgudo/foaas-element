@@ -1,0 +1,115 @@
+<link rel="import" href="./bower_components/iron-ajax/iron-ajax.html">
+<link rel="stylesheet" href="./bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+<dom-module id="foaas-element">
+  <template>
+
+    <iron-ajax
+      auto
+      id="possibleOperations"
+      url="{{_urlPossibleOperations}}"
+      params='{}'
+      handle-as="json"
+      last-response={{_responseOperations}}
+      debounce-duration="300">
+    </iron-ajax>
+
+    <iron-ajax
+      id="randomNameGenerator"
+      url="{{_urlRandomNameGenerator}}"
+      params='{{_nameParams}}'
+      handle-as="json"
+      last-response={{names}}
+      debounce-duration="300">
+    </iron-ajax>
+
+    <iron-ajax
+      id="foass"
+      url="{{_url}}"
+      params='{{params}}'
+      handle-as="json"
+      last-response={{_response}}
+      debounce-duration="300">
+    </iron-ajax>
+
+    <div class="container">
+      <div class="col-md-12">
+        <div class="jumbotron">
+          <h1>{{_response.message}}</h1>
+          <p><em>{{_response.subtitle}}</em></p>
+        </div>
+      </div>
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+
+  String.prototype.capitalize = function() {
+    return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+  };
+
+  // element registration
+  Polymer({
+    is: "foaas-element",
+    // add properties and methods on the element's prototype
+    properties: {
+      _urlPossibleOperations: {
+        type: String,
+        value: "http://www.foaas.com/operations"
+      },
+      _response: Object,
+      names:{
+        type: Array,
+        observer: "namesChanged"
+      },
+      _urlRandomNameGenerator: {
+        type: String,
+        value: "http://api.randomuser.me/"
+      },
+      _responseOperations: {
+        type: Array,
+        value: [],
+        observer: "_responseOperationsChanged"
+      },
+      _url: {
+        type: String,
+        value: "http://www.foaas.com"
+      },
+      _actionToBeCalled: Object,
+      _nameParams: Object
+    },
+    ready: function() {
+
+    },
+    _responseOperationsChanged: function(newValue, oldValue) {
+      console.log("_responseOperationsChanged");
+      if(newValue.length > 0) {
+
+        this._actionToBeCalled = newValue[
+          Math.floor(Math.random() * newValue.length)];
+
+        while(this._actionToBeCalled.url == "/version") {
+          this._actionToBeCalled = newValue[
+            Math.floor(Math.random() * newValue.length)];
+        }
+
+        this._getPeople(this._actionToBeCalled.fields.length);
+      }
+    },
+    namesChanged: function(newValue, oldValue) {
+      for (var field in this._actionToBeCalled.fields) {
+        this._actionToBeCalled.url = this._actionToBeCalled.url.replace(
+          ":"+this._actionToBeCalled.fields[field].field,
+          newValue.results[field].name.first.capitalize());
+      }
+      this._url = this._url + this._actionToBeCalled.url;
+      this.$.foass.generateRequest();
+    },
+    _getPeople: function(howMany) {
+      this._nameParams = {"results": howMany};
+      this.$.randomNameGenerator.generateRequest();
+    }
+  });
+</script>
