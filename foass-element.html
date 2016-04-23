@@ -5,7 +5,6 @@
   <template>
 
     <iron-ajax
-      auto
       id="possibleOperations"
       url="{{_urlPossibleOperations}}"
       params='{}'
@@ -15,7 +14,7 @@
     </iron-ajax>
 
     <iron-ajax
-      id="randomNameGenerator"
+      id="randomNames"
       url="{{_urlRandomNameGenerator}}"
       params='{{_nameParams}}'
       handle-as="json"
@@ -33,10 +32,12 @@
     </iron-ajax>
 
     <div class="container">
-      <div class="col-md-12">
-        <div class="jumbotron">
-          <h1>{{_response.message}}</h1>
-          <p><em>{{_response.subtitle}}</em></p>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="jumbotron">
+            <h1>{{_response.message}}</h1>
+            <p><em>{{_response.subtitle}}</em></p>
+          </div>
         </div>
       </div>
     </div>
@@ -55,6 +56,10 @@
     is: "foaas-element",
     // add properties and methods on the element's prototype
     properties: {
+      localStorageKey: {
+        type: String,
+        value: "foaas-names"
+      },
       _urlPossibleOperations: {
         type: String,
         value: "http://www.foaas.com/operations"
@@ -78,10 +83,19 @@
         value: "http://www.foaas.com"
       },
       _actionToBeCalled: Object,
-      _nameParams: Object
+      _nameParams: {
+        type: Object,
+        value: {"results": 1000, "inc": "name,nat", "nat": "AU, BR, CA, DE, DK, ES, FI, FR, GB, IE, NL, NZ, US"}
+      }
     },
     ready: function() {
+      var savedNames = localStorage.getItem(this.localStorageKey);
 
+      if(savedNames == null) {
+        this.$.randomNames.generateRequest();
+      } else {
+        this.names = JSON.parse(localStorage.getItem(this.localStorageKey));
+      }
     },
     _responseOperationsChanged: function(newValue, oldValue) {
       console.log("_responseOperationsChanged");
@@ -95,21 +109,26 @@
             Math.floor(Math.random() * newValue.length)];
         }
 
-        this._getPeople(this._actionToBeCalled.fields.length);
+        for (var field in this._actionToBeCalled.fields) {
+
+          var nameToUse = this.names.results[Math.floor(Math.random() *
+            this.names.results.length)];
+
+          this._actionToBeCalled.url = this._actionToBeCalled.url.replace(
+            ":"+this._actionToBeCalled.fields[field].field,
+            nameToUse.name.first.capitalize() + " " +
+            nameToUse.name.last.capitalize());
+        }
+        this._url = this._url + this._actionToBeCalled.url;
+        this.$.foass.generateRequest();
       }
     },
     namesChanged: function(newValue, oldValue) {
-      for (var field in this._actionToBeCalled.fields) {
-        this._actionToBeCalled.url = this._actionToBeCalled.url.replace(
-          ":"+this._actionToBeCalled.fields[field].field,
-          newValue.results[field].name.first.capitalize());
+      var storedValue = localStorage.getItem(this.localStorageKey);
+      if(storedValue != newValue) {
+        localStorage.setItem(this.localStorageKey, JSON.stringify(newValue));
       }
-      this._url = this._url + this._actionToBeCalled.url;
-      this.$.foass.generateRequest();
-    },
-    _getPeople: function(howMany) {
-      this._nameParams = {"results": howMany};
-      this.$.randomNameGenerator.generateRequest();
+      this.$.possibleOperations.generateRequest();
     }
   });
 </script>
