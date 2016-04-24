@@ -1,2 +1,2 @@
-# foass-element
+# foaas-element
 Polymer element for foass
