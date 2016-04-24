@@ -18,7 +18,7 @@
       url="{{_urlRandomNameGenerator}}"
       params='{{_nameParams}}'
       handle-as="json"
-      last-response={{names}}
+      on-response="gotNames"
       debounce-duration="300">
     </iron-ajax>
 
@@ -85,17 +85,30 @@
       _actionToBeCalled: Object,
       _nameParams: {
         type: Object,
-        value: {"results": 1000, "inc": "name,nat", "nat": "AU, BR, CA, DE, DK, ES, FI, FR, GB, IE, NL, NZ, US"}
+        value: {"results": 1000, "inc": "name,nat"}
+      },
+      nationalities: {
+        type: String,
+        value : "AU, BR, CA, CH, DE, DK, ES, FI, FR, GB, IE, NL, NZ, US"
+      },
+      forceDownload: {
+        type: Boolean,
+        value: false
       }
     },
     ready: function() {
       var savedNames = localStorage.getItem(this.localStorageKey);
 
-      if(savedNames == null) {
-        this.$.randomNames.generateRequest();
-      } else {
-        this.names = JSON.parse(localStorage.getItem(this.localStorageKey));
+      if(this.names == null || this.names == undefined) {
+        if(savedNames == null || this.forceDownload == true) {
+          this.$.randomNames.generateRequest();
+        } else {
+          this.names = JSON.parse(localStorage.getItem(this.localStorageKey));
+        }
       }
+
+      this._nameParams.nat = this.nationalities;
+
     },
     _responseOperationsChanged: function(newValue, oldValue) {
       console.log("_responseOperationsChanged");
@@ -111,13 +124,13 @@
 
         for (var field in this._actionToBeCalled.fields) {
 
-          var nameToUse = this.names.results[Math.floor(Math.random() *
-            this.names.results.length)];
+          var nameToUse = this.names[Math.floor(Math.random() *
+            this.names.length)];
 
           this._actionToBeCalled.url = this._actionToBeCalled.url.replace(
             ":"+this._actionToBeCalled.fields[field].field,
-            nameToUse.name.first.capitalize() + " " +
-            nameToUse.name.last.capitalize());
+            nameToUse.first.capitalize() + " " +
+            nameToUse.last.capitalize());
         }
         this._url = this._url + this._actionToBeCalled.url;
         this.$.foass.generateRequest();
@@ -129,6 +142,17 @@
         localStorage.setItem(this.localStorageKey, JSON.stringify(newValue));
       }
       this.$.possibleOperations.generateRequest();
+    },
+    gotNames: function(event, ironRequest) {
+      var requestResults = ironRequest.response.results;
+      var results = []
+      for (var item in requestResults) {
+        var firstName = requestResults[item].name.first;
+        var lastName = requestResults[item].name.last;
+        results.push({"first": firstName, "last": lastName});
+      }
+
+      this.names = results;
     }
   });
 </script>
